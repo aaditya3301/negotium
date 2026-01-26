@@ -1,0 +1,12 @@
+# Negotium Backend
+
+# Python dependencies
+fastapi
+uvicorn[standard]
+langchain-groq
+langgraph
+opik
+pymongo
+python-dotenv
+pydantic
+pydantic-settings
