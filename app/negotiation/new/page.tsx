@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Send, ArrowLeft, Loader2, MessageCircle, TrendingUp, Clock, Pause, Play, X, Zap, Target, BrainCircuit, Mic } from "lucide-react"
 import Link from "next/link"
@@ -20,7 +20,7 @@ const scenarioDurations: Record<string, number> = {
   "remote_work": 14,
 }
 
-export default function NegotiationChat() {
+function NegotiationContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const scenario = searchParams.get("scenario") || "salary_raise"
@@ -393,5 +393,23 @@ export default function NegotiationChat() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function NegotiationChatWrapper() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center font-sans">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mx-auto mb-4 relative">
+             <div className="absolute inset-0 rounded-2xl border border-teal-500/30 animate-pulse" />
+             <Loader2 className="w-8 h-8 animate-spin text-teal-400" />
+          </div>
+          <p className="text-white/60 text-lg font-light tracking-wide animate-pulse">Loading Simulation...</p>
+        </div>
+      </div>
+    }>
+      <NegotiationContent />
+    </Suspense>
   )
 }
