@@ -1,8 +1,10 @@
 "use client"
 
 import { useRef, useEffect, useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion, useScroll, useTransform, useSpring, useInView } from "framer-motion"
-import { signIn } from "next-auth/react"
+import { signIn, signOut, useSession } from "next-auth/react"
 import { 
   Cpu, 
   ShieldCheck, 
@@ -14,7 +16,9 @@ import {
   CheckCircle2, 
   AlertTriangle,
   BrainCircuit,
-  Network
+  Network,
+  User,
+  LogOut
 } from "lucide-react"
 import Image from "next/image"
 import { clsx, type ClassValue } from "clsx"
@@ -55,6 +59,7 @@ export default function Home() {
 // 1. Navbar
 function Navbar() {
   const [scrolled, setScrolled] = useState(false)
+  const { data: session, status } = useSession()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50)
@@ -69,35 +74,64 @@ function Navbar() {
     )}>
       <div className="container mx-auto px-6 flex items-center justify-between">
         <div className="flex items-center gap-8">
-          <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="relative w-8 h-8 rounded-lg overflow-hidden">
               <Image src="/logo.png" alt="Negotium" fill className="object-cover" />
             </div>
             <span className="font-bold text-xl tracking-tight">NEGOTIUM</span>
-          </a>
+          </Link>
 
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-white/70">
-            <a href="/dashboard" className="hover:text-teal-400 transition-colors">Dashboard</a>
-            <a href="/scenarios" className="hover:text-teal-400 transition-colors">Scenarios</a>
+            {status === "authenticated" && (
+              <>
+                <Link href="/dashboard" className="hover:text-teal-400 transition-colors">Dashboard</Link>
+                <Link href="/scenarios" className="hover:text-teal-400 transition-colors">Scenarios</Link>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-white/70">
-          <a href="#overview" className="hover:text-teal-400 transition-colors">Overview</a>
-          <a href="#technology" className="hover:text-teal-400 transition-colors">Technology</a>
-          <a href="#process" className="hover:text-teal-400 transition-colors">Process</a>
-        </div>
-
         <div className="flex items-center gap-4">
-          <button onClick={() => signIn("google", { callbackUrl: "/dashboard" })} className="text-sm font-medium text-white/70 hover:text-white transition-colors">
-            Log In
-          </button>
-          <button 
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-            className="px-5 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-teal-50 transition-colors"
-          >
-            Get Started
-          </button>
+          {status === "loading" ? (
+             <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+          ) : status === "authenticated" ? (
+            <div className="flex items-center gap-4">
+               <div className="flex items-center gap-3 pr-4 border-r border-white/10">
+                 <div className="text-right hidden md:block">
+                   <div className="text-sm font-bold text-white">{session.user?.name}</div>
+                   <div className="text-xs text-white/40">{session.user?.email}</div>
+                 </div>
+                 {session.user?.image ? (
+                   <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/10">
+                     <Image src={session.user.image} alt="User" fill className="object-cover" />
+                   </div>
+                 ) : (
+                    <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center text-teal-400">
+                      <User className="w-5 h-5" />
+                    </div>
+                 )}
+               </div>
+               <button 
+                 onClick={() => signOut()}
+                 className="p-2 hover:bg-white/5 rounded-full text-white/50 hover:text-white transition-colors"
+                 title="Sign Out"
+               >
+                 <LogOut className="w-5 h-5" />
+               </button>
+            </div>
+          ) : (
+            <>
+              <button onClick={() => signIn("google", { callbackUrl: "/dashboard" })} className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+                Log In
+              </button>
+              <button 
+                onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                className="px-5 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-teal-50 transition-colors"
+              >
+                Get Started
+              </button>
+            </>
+          )}
         </div>
       </div>
     </nav>
@@ -106,6 +140,17 @@ function Navbar() {
 
 // 2. Hero Section
 function HeroSection() {
+  const { data: session } = useSession()
+  const router = useRouter()
+
+  const handleStart = () => {
+    if (session) {
+      router.push("/dashboard")
+    } else {
+      signIn("google", { callbackUrl: "/dashboard" })
+    }
+  }
+
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-12 overflow-hidden">
       {/* Background Effects */}
@@ -156,7 +201,7 @@ function HeroSection() {
           transition={{ duration: 0.8, delay: 0.6 }}
         >
           <button 
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            onClick={handleStart}
             className="group relative px-8 py-4 bg-transparent overflow-hidden rounded-full font-semibold text-lg transition-all hover:scale-105"
           >
             <div className="absolute inset-0 border border-teal-500/50 rounded-full" />

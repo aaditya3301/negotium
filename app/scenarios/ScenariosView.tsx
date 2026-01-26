@@ -141,15 +141,21 @@ export default function ScenariosView({ userName, userImage }: ScenariosViewProp
             </div>
             
             <div className="flex items-center gap-4">
-               <div className="flex items-center gap-3 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
-                  {userImage && (
-                    <div className="relative w-6 h-6 rounded-full overflow-hidden">
-                       <Image src={userImage} alt="User" fill className="object-cover" />
-                    </div>
-                  )}
-                  <span className="text-sm font-medium text-white/70">{userName}</span>
-               </div>
-            </div>
+                <div className="flex items-center gap-3 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
+                   {userImage && (
+                     <div className="relative w-6 h-6 rounded-full overflow-hidden">
+                        <Image src={userImage} alt="User" fill className="object-cover" />
+                     </div>
+                   )}
+                   <span className="text-sm font-medium text-white/70">{userName}</span>
+                </div>
+                <button 
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="text-sm font-medium text-white/50 hover:text-white transition-colors"
+                >
+                  Sign Out
+                </button>
+             </div>
           </div>
         </div>
       </nav>

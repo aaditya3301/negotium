@@ -1,36 +1,27 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Negotium
 
-## Getting Started
+**Negotiate with Superhuman Intelligence.**
 
-First, run the development server:
+Negotium is an advanced AI-powered training platform designed to master high-stakes negotiation skills. By simulating realistic, adaptive scenarios against neural agents, users can practice, analyze, and refine their strategies in a risk-free environment.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+![Negotium Platform](/public/logo.png)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Core Capabilities
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Adaptive Neural Opponents**: Powered by Groq/Llama 3 and orchestrated via LangGraph, agents dynamically adjust their mood, patience, and strategy based on your responses.
+- **Real-Time Analysis**: The "Shadow Coach" engine monitors leverage shifts and sentiment live, providing tactical whispers to guide your next move.
+- **Behavioral DNA**: Deep post-session analytics decompose your performance, identifying trust-building patterns and value-leakage points.
+- **Immersive Scenarios**: A library of diverse simulations ranging from salary negotiations and client rate discussions to high-pressure crisis resolution.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Technology Stack
 
-## Learn More
+Built with a focus on performance, interactivity, and observability.
 
-To learn more about Next.js, take a look at the following resources:
+- **Frontend**: Next.js 15, Framer Motion, Tailwind CSS (Glassmorphism UI)
+- **Backend**: FastAPI, LangGraph, Multi-Agent Orchestration
+- **Intelligence**: Groq API (Llama 3.1 70B), Opik (Observability & Tracing)
+- **Database**: MongoDB Atlas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+© 2026 Negotium AI Inc. All rights reserved.

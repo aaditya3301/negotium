@@ -6,7 +6,7 @@ export default async function Dashboard() {
   const session = await auth()
   
   if (!session) {
-    redirect("/")
+    redirect("/api/auth/signin?callbackUrl=/dashboard")
   }
 
   return <DashboardView userName={session.user?.name || "User"} userImage={session.user?.image} />
