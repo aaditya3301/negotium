@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: "Master the art of negotiation with AI",
   icons: {
     icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
 };
 

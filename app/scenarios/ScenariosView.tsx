@@ -118,7 +118,7 @@ export default function ScenariosView({ userName, userImage }: ScenariosViewProp
             <div className="flex items-center gap-8">
               <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                 <div className="relative w-8 h-8 rounded-lg overflow-hidden">
-                  <Image src="/logo.png" alt="Negotium" fill className="object-cover" />
+                  <Image src="/logo.png" alt="Negotium" fill className="object-contain" />
                 </div>
                 <span className="font-bold text-xl tracking-tight text-white/90">NEGOTIUM</span>
               </Link>
@@ -144,7 +144,7 @@ export default function ScenariosView({ userName, userImage }: ScenariosViewProp
                 <div className="flex items-center gap-3 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
                    {userImage && (
                      <div className="relative w-6 h-6 rounded-full overflow-hidden">
-                        <Image src={userImage} alt="User" fill className="object-cover" />
+                        <Image src={userImage} alt="User" fill className="object-contain" />
                      </div>
                    )}
                    <span className="text-sm font-medium text-white/70">{userName}</span>

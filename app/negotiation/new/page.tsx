@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Send, ArrowLeft, Loader2, MessageCircle, TrendingUp, Clock, Pause, Play, X, Zap, Target, BrainCircuit, Mic } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 
 type Message = {
@@ -200,6 +201,13 @@ function NegotiationContent() {
             <span className="font-medium text-sm">Exit Simulation</span>
           </Link>
 
+          <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity">
+            <div className="relative w-6 h-6 rounded-lg overflow-hidden">
+              <Image src="/logo.png" alt="Negotium" fill className="object-contain" />
+            </div>
+            <span className="font-bold text-lg tracking-tight">NEGOTIUM</span>
+          </Link>
+
           <div className="flex items-center gap-6">
              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
                 <div className={`w-2 h-2 rounded-full ${isPaused ? 'bg-amber-400 animate-pulse' : 'bg-green-400 animate-pulse'}`} />
@@ -373,20 +381,13 @@ function NegotiationContent() {
              </div>
 
              {/* Controls */}
-             <div className="grid grid-cols-2 gap-3 mt-auto">
-                <button 
-                  onClick={togglePause}
-                  className="px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm font-medium hover:bg-white/10 hover:text-white text-white/70 transition-all flex items-center justify-center gap-2"
-                >
-                  {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-                  {isPaused ? "Resume" : "Pause"}
-                </button>
+             <div className="mt-auto">
                 <button 
                   onClick={endNegotiation}
-                  className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm font-medium hover:bg-red-500/20 text-red-400 transition-all flex items-center justify-center gap-2"
+                  className="w-full px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm font-medium hover:bg-red-500/20 text-red-400 transition-all flex items-center justify-center gap-2"
                 >
                   <X className="w-4 h-4" />
-                  Abort
+                  Abort Session
                 </button>
              </div>
           </div>

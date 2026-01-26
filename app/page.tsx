@@ -47,7 +47,6 @@ export default function Home() {
 
       <Navbar />
       <HeroSection />
-      <PartnersSection />
       <ProcessSection />
       <ThreatsSection />
       <TimelineSection />
@@ -76,7 +75,7 @@ function Navbar() {
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="relative w-8 h-8 rounded-lg overflow-hidden">
-              <Image src="/logo.png" alt="Negotium" fill className="object-cover" />
+              <Image src="/logo.png" alt="Negotium" fill className="object-contain" />
             </div>
             <span className="font-bold text-xl tracking-tight">NEGOTIUM</span>
           </Link>
@@ -103,7 +102,7 @@ function Navbar() {
                  </div>
                  {session.user?.image ? (
                    <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/10">
-                     <Image src={session.user.image} alt="User" fill className="object-cover" />
+                     <Image src={session.user.image} alt="User" fill className="object-contain" />
                    </div>
                  ) : (
                     <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center text-teal-400">
@@ -216,35 +215,7 @@ function HeroSection() {
   )
 }
 
-// 3. Partners Section
-function PartnersSection() {
-  return (
-    <section className="py-20 border-t border-white/5 bg-black/50 backdrop-blur-sm">
-      <div className="container mx-auto px-6">
-        <p className="text-center text-sm font-mono text-white/30 mb-8 tracking-widest uppercase">Trusted by elite teams</p>
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {[
-            { name: "Global Corp", icon: Globe },
-            { name: "Secure Systems", icon: Server },
-            { name: "Future Ventures", icon: Zap },
-          ].map((partner, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              viewport={{ once: true }}
-              className="h-24 rounded-xl border border-white/5 bg-white/[0.02] flex items-center justify-center gap-3 backdrop-blur-sm hover:border-teal-500/30 transition-colors group"
-            >
-              <partner.icon className="w-6 h-6 text-teal-500/50 group-hover:text-teal-400 transition-colors" />
-              <span className="text-lg font-bold text-white/40 group-hover:text-white/70 transition-colors">{partner.name}</span>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
+
 
 // 4. Process Transition Section
 function ProcessSection() {

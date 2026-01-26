@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { ArrowLeft, TrendingUp, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
 
 type Analysis = {
@@ -88,10 +89,19 @@ export default function AnalysisPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-black text-white">
       <div className="container mx-auto px-4 py-12 max-w-5xl">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
-        </Link>
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-400 hover:text-white">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Link>
+
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <div className="relative w-8 h-8 rounded-lg overflow-hidden">
+              <Image src="/logo.png" alt="Negotium" fill className="object-contain" />
+            </div>
+            <span className="font-bold text-xl tracking-tight">NEGOTIUM</span>
+          </Link>
+        </div>
 
         {/* Outcome Badge */}
         <div className="text-center mb-12">
