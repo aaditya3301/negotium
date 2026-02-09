@@ -1,17 +1,80 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Building2, TrendingUp, Clock, Target, ArrowRight, Zap, Play } from "lucide-react"
+import { Building2, TrendingUp, Clock, Target, ArrowRight, Zap, Play, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { signOut } from "next-auth/react"
+import { useEffect, useState } from "react"
 
 interface DashboardViewProps {
   userName?: string
   userImage?: string | null
+  userEmail?: string | null
 }
 
-export default function DashboardView({ userName, userImage }: DashboardViewProps) {
+interface SessionData {
+  session_id: string
+  scenario_type: string
+  difficulty: string
+  status: string
+  created_at: string
+  completed_at?: string
+}
+
+export default function DashboardView({ userName, userImage, userEmail }: DashboardViewProps) {
+  const [sessions, setSessions] = useState<SessionData[]>([])
+  const [stats, setStats] = useState({
+    totalSessions: 0,
+    completedSessions: 0,
+    avgScore: 0,
+    totalTime: 0
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        // Use email as user_id, fallback to demo_user
+        const userId = userEmail || 'demo_user'
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}/sessions`)
+        
+        if (res.ok) {
+          const data = await res.json()
+          const userSessions = data.sessions || []
+          setSessions(userSessions)
+          
+          // Calculate real stats from sessions
+          const completed = userSessions.filter((s: SessionData) => s.status === 'completed')
+          const avgTurns = completed.length > 0 
+            ? completed.reduce((acc: number, s: any) => acc + (s.turns_count || 5), 0) / completed.length 
+            : 0
+          
+          // Calculate actual time spent in minutes (UTC timestamps work correctly for duration)
+          const totalMinutes = userSessions.reduce((total: number, s: SessionData) => {
+            const start = new Date(s.created_at + 'Z').getTime() // Add Z to parse as UTC
+            const end = s.completed_at ? new Date(s.completed_at + 'Z').getTime() : Date.now()
+            const durationMs = end - start
+            const minutes = Math.round(durationMs / 1000 / 60)
+            return total + minutes
+          }, 0)
+          
+          setStats({
+            totalSessions: userSessions.length,
+            completedSessions: completed.length,
+            avgScore: completed.length > 0 ? Math.round(completed.length * 100 / userSessions.length) : 0,
+            totalTime: totalMinutes
+          })
+        }
+      } catch (err) {
+        console.error('Failed to fetch sessions:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchSessions()
+  }, [userEmail])
+  
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -110,23 +173,23 @@ export default function DashboardView({ userName, userImage }: DashboardViewProp
           <motion.div variants={item} className="grid md:grid-cols-4 gap-6 mb-12">
              <StatsCard 
                label="Overall Score" 
-               value="--" 
+               value={`${stats.avgScore}%`}
                icon={<TrendingUp className="w-5 h-5 text-teal-400" />}
-               trend="+0%"
+               trend={stats.avgScore > 50 ? `+${stats.avgScore}%` : undefined}
              />
              <StatsCard 
                label="Sessions Run" 
-               value="0" 
+               value={stats.totalSessions.toString()}
                icon={<Target className="w-5 h-5 text-purple-400" />}
              />
              <StatsCard 
                label="Time Invested" 
-               value="0h" 
+               value={`${stats.totalTime}m`}
                icon={<Clock className="w-5 h-5 text-amber-400" />}
              />
              <StatsCard 
-               label="Scenarios Done" 
-               value="0" 
+               label="Completed" 
+               value={stats.completedSessions.toString()}
                icon={<Building2 className="w-5 h-5 text-cyan-400" />}
              />
           </motion.div>
@@ -168,22 +231,62 @@ export default function DashboardView({ userName, userImage }: DashboardViewProp
                <motion.div variants={item} className="bg-[#111] border border-white/5 rounded-3xl p-8">
                   <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
                     <Clock className="w-5 h-5 text-white/50" />
-                    Recent Activity
+                    Recent Sessions
                   </h3>
                   
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
-                       <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                             <Target className="w-5 h-5 text-teal-500" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-white/90">Account Created</h4>
-                            <p className="text-xs text-white/40">Welcome to Negotium</p>
-                          </div>
-                       </div>
-                       <span className="text-xs text-white/30 font-mono">Just now</span>
-                    </div>
+                  <div className="space-y-3">
+                    {sessions.length === 0 ? (
+                      <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
+                         <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
+                               <Target className="w-5 h-5 text-teal-500" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-white/90">No sessions yet</h4>
+                              <p className="text-xs text-white/40">Start your first negotiation</p>
+                            </div>
+                         </div>
+                      </div>
+                    ) : (
+                      sessions.slice(0, 5).map((session) => (
+                        <Link
+                          key={session.session_id}
+                          href={`/analysis/${session.session_id}`}
+                          className="p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-teal-500/30 transition-all flex items-center justify-between group cursor-pointer"
+                        >
+                           <div className="flex items-center gap-4">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                session.status === 'completed' 
+                                  ? 'bg-green-500/10' 
+                                  : 'bg-amber-500/10'
+                              }`}>
+                                 {session.status === 'completed' ? (
+                                   <CheckCircle className="w-5 h-5 text-green-500" />
+                                 ) : (
+                                   <Clock className="w-5 h-5 text-amber-500" />
+                                 )}
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-white/90 group-hover:text-teal-400 transition-colors capitalize">
+                                  {session.scenario_type.replace('_', ' ')} - {session.difficulty}
+                                </h4>
+                                <p className="text-xs text-white/40">
+                                  {new Date(session.created_at + 'Z').toLocaleDateString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                                  })}
+                                </p>
+                              </div>
+                           </div>
+                           <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <ArrowRight className="w-4 h-4 text-teal-400" />
+                           </div>
+                        </Link>
+                      ))
+                    )}
                   </div>
                </motion.div>
             </div>

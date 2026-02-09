@@ -4,16 +4,14 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowLeft, TrendingUp, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
+import { ArrowLeft, TrendingUp, AlertCircle, CheckCircle, Loader2, Target } from "lucide-react"
 
 type Analysis = {
-  overall_outcome: string
-  executive_summary: string
-  strengths: Array<{ point: string; turn: number; example: string }>
-  mistakes: Array<{ point: string; turn: number; impact: string; example: string }>
-  pivotal_moments: Array<{ turn: number; what_happened: string; analysis: string; better_approach: string }>
-  patterns_identified: string[]
-  focus_areas: string[]
+  summary: string
+  outcome: string
+  strengths: Array<{ point: string; explanation: string }>
+  mistakes: Array<{ point: string; explanation: string }>
+  skill_gaps: string[]
   leverage_trajectory: number[]
   mood_trajectory: string[]
 }
@@ -87,155 +85,260 @@ export default function AnalysisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-black text-white">
-      <div className="container mx-auto px-4 py-12 max-w-5xl">
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-gray-400 hover:text-white">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Link>
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-teal-500/30">
+      
+      {/* Background Gradients */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[1000px] h-[600px] bg-teal-500/5 rounded-[100%] blur-[120px] -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-purple-500/5 rounded-[100%] blur-[120px] translate-y-1/3" />
+      </div>
 
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="relative w-8 h-8 rounded-lg overflow-hidden">
-              <Image src="/logo.png" alt="Negotium" fill className="object-contain" />
-            </div>
-            <span className="font-bold text-xl tracking-tight">NEGOTIUM</span>
-          </Link>
+      {/* Navbar */}
+      <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl">
+        <div className="container mx-auto px-6">
+          <div className="flex h-16 items-center justify-between">
+            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <div className="relative w-8 h-8 rounded-lg overflow-hidden">
+                <Image src="/logo.png" alt="Negotium" fill className="object-contain" />
+              </div>
+              <span className="font-bold text-xl tracking-tight text-white/90">NEGOTIUM</span>
+            </Link>
+            
+            <Link href="/dashboard" className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-medium">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
+            </Link>
+          </div>
         </div>
+      </nav>
 
-        {/* Outcome Badge */}
+      <main className="relative z-10 container mx-auto px-6 py-32 max-w-6xl">
+        {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Your Performance Analysis</h1>
-          <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full border ${outcomeColors[analysis.overall_outcome as keyof typeof outcomeColors]} text-xl font-semibold`}>
-            {analysis.overall_outcome === "success" && <CheckCircle className="w-6 h-6" />}
-            {outcomeLabels[analysis.overall_outcome as keyof typeof outcomeLabels]}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-medium mb-6">
+            <TrendingUp className="w-3 h-3" />
+            PERFORMANCE ANALYSIS
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">Session Report</h1>
+          <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full border ${outcomeColors[analysis.outcome.toLowerCase().replace(' ', '_') as keyof typeof outcomeColors] || outcomeColors.partial_success} text-xl font-semibold`}>
+            {analysis.outcome.toLowerCase().includes('success') && <CheckCircle className="w-6 h-6" />}
+            {analysis.outcome}
           </div>
         </div>
 
-        {/* Executive Summary */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8">
+        {/* Summary */}
+        <div className="bg-[#111] border border-white/5 rounded-3xl p-8 mb-8">
           <h2 className="text-2xl font-bold mb-4">Executive Summary</h2>
-          <p className="text-gray-300 leading-relaxed text-lg">{analysis.executive_summary}</p>
+          <p className="text-white/70 leading-relaxed text-lg">{analysis.summary}</p>
+        </div>
+
+        {/* Leverage Chart - Line Graph with Area Fill */}
+        <div className="bg-[#111] border border-white/5 rounded-3xl p-8 mb-8">
+          <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+            <TrendingUp className="w-6 h-6 text-teal-400" />
+            Leverage Progression
+          </h2>
+          <p className="text-white/40 text-sm mb-6">Your negotiation power throughout the conversation</p>
+          
+          <div className="relative h-64">
+            {/* Y-axis labels */}
+            <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-between text-xs text-gray-500 font-mono">
+              <span>100%</span>
+              <span>75%</span>
+              <span>50%</span>
+              <span>25%</span>
+              <span>0%</span>
+            </div>
+            
+            {/* Grid lines */}
+            <div className="absolute left-12 right-0 top-0 bottom-0">
+              <div className="absolute w-full border-t border-white/5 top-0"></div>
+              <div className="absolute w-full border-t border-white/5 top-1/4"></div>
+              <div className="absolute w-full border-t border-white/10 top-1/2"></div>
+              <div className="absolute w-full border-t border-white/5 top-3/4"></div>
+              <div className="absolute w-full border-t border-white/5 bottom-0"></div>
+            </div>
+
+            {/* Line chart with area */}
+            <svg className="absolute left-12 right-0 top-0 bottom-0 w-[calc(100%-3rem)] h-full" viewBox="0 0 800 256" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="leverageGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="rgb(139, 92, 246)" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="rgb(99, 102, 241)" stopOpacity="0.05" />
+                </linearGradient>
+              </defs>
+              
+              {/* Area fill */}
+              <path
+                d={`
+                  M 0,${256 - (analysis.leverage_trajectory[0] * 2.56)}
+                  ${analysis.leverage_trajectory.map((score, idx) => {
+                    const x = (idx / (analysis.leverage_trajectory.length - 1)) * 800;
+                    const y = 256 - (score * 2.56);
+                    return `L ${x},${y}`;
+                  }).join(' ')}
+                  L 800,256
+                  L 0,256
+                  Z
+                `}
+                fill="url(#leverageGradient)"
+              />
+              
+              {/* Line connecting dots */}
+              <path
+                d={`
+                  M 0,${256 - (analysis.leverage_trajectory[0] * 2.56)}
+                  ${analysis.leverage_trajectory.map((score, idx) => {
+                    const x = (idx / (analysis.leverage_trajectory.length - 1)) * 800;
+                    const y = 256 - (score * 2.56);
+                    return `L ${x},${y}`;
+                  }).join(' ')}
+                `}
+                fill="none"
+                stroke="rgb(139, 92, 246)"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+              
+              {/* Data points */}
+              {analysis.leverage_trajectory.map((score, idx) => {
+                const x = (idx / (analysis.leverage_trajectory.length - 1)) * 800;
+                const y = 256 - (score * 2.56);
+                return (
+                  <g key={idx}>
+                    {/* Outer glow */}
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="10"
+                      fill="rgb(139, 92, 246)"
+                      opacity="0.3"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    {/* Main dot */}
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="7"
+                      fill="rgb(139, 92, 246)"
+                      stroke="rgb(30, 30, 50)"
+                      strokeWidth="3"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    {/* Hover area */}
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="20"
+                      fill="transparent"
+                      className="hover:fill-violet-500/20 transition-all cursor-pointer"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    {/* Tooltip on hover */}
+                    <text
+                      x={x}
+                      y={y - 20}
+                      textAnchor="middle"
+                      className="text-xs fill-violet-400 font-mono font-bold"
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {score}%
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+          
+          {/* X-axis labels */}
+          <div className="flex justify-between mt-4 text-xs text-gray-500 px-12 font-mono">
+            <span>Turn 1</span>
+            <span>Turn {Math.ceil(analysis.leverage_trajectory.length / 2)}</span>
+            <span>Turn {analysis.leverage_trajectory.length}</span>
+          </div>
         </div>
 
         {/* Strengths */}
-        <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-8 mb-8">
+        <div className="bg-[#111] border border-white/5 rounded-3xl p-8 mb-8">
           <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-            <CheckCircle className="w-6 h-6 text-green-400" />
+            <CheckCircle className="w-6 h-6 text-teal-400" />
             What You Did Well
           </h2>
           <div className="space-y-4">
-            {analysis.strengths.map((strength, idx) => (
-              <div key={idx} className="bg-white/5 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <span className="text-green-400 font-bold text-sm mt-1">Turn {strength.turn}</span>
-                  <div className="flex-1">
-                    <p className="font-semibold mb-1">{strength.point}</p>
-                    <p className="text-sm text-gray-400 italic">"{strength.example}"</p>
-                  </div>
+            {analysis.strengths && analysis.strengths.length > 0 ? (
+              analysis.strengths.map((strength, idx) => (
+                <div key={idx} className="bg-white/5 border border-white/5 rounded-xl p-5 hover:bg-white/[0.07] hover:border-teal-500/30 transition-all">
+                  <p className="font-semibold mb-2 text-white">{strength.point}</p>
+                  <p className="text-sm text-white/60">{strength.explanation}</p>
                 </div>
+              ))
+            ) : (
+              <div className="bg-white/5 rounded-lg p-4 text-center text-white/40">
+                Analysis in progress...
               </div>
-            ))}
+            )}
           </div>
         </div>
 
         {/* Mistakes */}
-        <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8 mb-8">
+        <div className="bg-[#111] border border-white/5 rounded-3xl p-8 mb-8">
           <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-            <AlertCircle className="w-6 h-6 text-red-400" />
-            Critical Mistakes
+            <AlertCircle className="w-6 h-6 text-amber-400" />
+            Areas for Improvement
           </h2>
           <div className="space-y-4">
-            {analysis.mistakes.map((mistake, idx) => (
-              <div key={idx} className="bg-white/5 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <span className="text-red-400 font-bold text-sm mt-1">Turn {mistake.turn}</span>
-                  <div className="flex-1">
-                    <p className="font-semibold mb-1">{mistake.point}</p>
-                    <p className="text-sm text-gray-400 mb-2">Impact: {mistake.impact}</p>
-                    <p className="text-sm text-gray-400 italic">"{mistake.example}"</p>
+            {analysis.mistakes && analysis.mistakes.length > 0 ? (
+              analysis.mistakes.map((mistake, idx) => (
+                <div key={idx} className="bg-white/5 border border-white/5 rounded-xl p-5 hover:bg-white/[0.07] hover:border-amber-500/30 transition-all">
+                  <p className="font-semibold mb-2 text-white">{mistake.point}</p>
+                  <p className="text-sm text-white/60">{mistake.explanation}</p>
+                </div>
+              ))
+            ) : (
+              <div className="bg-white/5 rounded-lg p-4 text-center text-white/40">
+                Analysis in progress...
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Skill Gaps */}
+        <div className="bg-gradient-to-br from-teal-900/20 to-black border border-teal-500/20 rounded-3xl p-8 mb-8">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <Target className="w-6 h-6 text-teal-400" />
+            Recommended Learning Paths
+          </h2>
+          <p className="text-white/60 text-sm mb-6">
+            Master these skills to level up your negotiation game. Click to access curated resources.
+          </p>
+          <div className="grid gap-4">
+            {analysis.skill_gaps && analysis.skill_gaps.length > 0 ? (
+              analysis.skill_gaps.map((skill, idx) => (
+                <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-5 flex items-center justify-between group hover:bg-white/[0.07] hover:border-teal-500/30 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center border border-teal-500/20">
+                    <span className="text-teal-400 font-bold">{idx + 1}</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white group-hover:text-teal-400 transition-colors">{skill}</p>
+                    <p className="text-xs text-white/40 mt-0.5">Unlock advanced tactics and frameworks</p>
                   </div>
                 </div>
+                <Link
+                  href={`/learn/${encodeURIComponent(skill)}`}
+                  className="px-5 py-2.5 bg-teal-500 text-black font-bold rounded-lg hover:bg-teal-400 transition-all text-sm"
+                >
+                  Learn
+                </Link>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Pivotal Moments */}
-        {analysis.pivotal_moments.length > 0 && (
-          <div className="bg-violet-500/5 border border-violet-500/20 rounded-2xl p-8 mb-8">
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-violet-400" />
-              Pivotal Moments
-            </h2>
-            <div className="space-y-6">
-              {analysis.pivotal_moments.map((moment, idx) => (
-                <div key={idx} className="bg-white/5 rounded-lg p-6">
-                  <div className="flex items-start gap-3 mb-4">
-                    <span className="text-violet-400 font-bold">Turn {moment.turn}</span>
-                    <div className="flex-1">
-                      <p className="font-semibold mb-2">What Happened</p>
-                      <p className="text-gray-300 mb-4">{moment.what_happened}</p>
-                      
-                      <p className="font-semibold mb-2">Analysis</p>
-                      <p className="text-gray-300 mb-4">{moment.analysis}</p>
-                      
-                      <p className="font-semibold mb-2 text-green-400">Better Approach</p>
-                      <p className="text-gray-300">{moment.better_approach}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Patterns Identified */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8">
-          <h2 className="text-2xl font-bold mb-6">Behavioral Patterns</h2>
-          <ul className="space-y-3">
-            {analysis.patterns_identified.map((pattern, idx) => (
-              <li key={idx} className="flex items-start gap-3">
-                <span className="text-violet-400 mt-1">•</span>
-                <span className="text-gray-300">{pattern}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Focus Areas */}
-        <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-8 mb-8">
-          <h2 className="text-2xl font-bold mb-6">Focus Areas for Next Time</h2>
-          <ul className="space-y-3">
-            {analysis.focus_areas.map((area, idx) => (
-              <li key={idx} className="flex items-start gap-3">
-                <span className="text-indigo-400 font-bold">{idx + 1}.</span>
-                <span className="text-gray-300 font-medium">{area}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Leverage Chart */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8">
-          <h2 className="text-2xl font-bold mb-6">Leverage Over Time</h2>
-          <div className="h-64 flex items-end justify-between gap-1 px-4">
-            {analysis.leverage_trajectory.map((score, idx) => (
-              <div
-                key={idx}
-                className="w-full bg-gradient-to-t from-violet-500/30 to-indigo-500/50 rounded-t hover:from-violet-500/60 hover:to-indigo-500/80 transition-colors relative group"
-                style={{ height: `${score}%` }}
-              >
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-black text-xs px-2 py-1 rounded border border-white/10 whitespace-nowrap">
-                  Turn {idx + 1}: {score}%
-                </div>
+              ))
+            ) : (
+              <div className="bg-white/5 rounded-lg p-4 text-center text-white/40">
+                Analysis in progress...
               </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-4 text-xs text-gray-500 px-4">
-            <span>Start</span>
-            <span>Mid-Game</span>
-            <span>End</span>
+            )}
           </div>
         </div>
 
@@ -243,18 +346,18 @@ export default function AnalysisPage() {
         <div className="flex gap-4">
           <Link
             href="/scenarios"
-            className="flex-1 px-6 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-lg font-semibold text-center hover:shadow-lg hover:shadow-violet-500/50 transition-all duration-300"
+            className="flex-1 px-6 py-4 bg-teal-500 text-black font-bold rounded-xl hover:bg-teal-400 transition-all duration-300 text-center"
           >
             Practice Again
           </Link>
           <Link
             href="/dashboard"
-            className="flex-1 px-6 py-4 bg-white/10 border border-white/20 rounded-lg font-semibold text-center hover:bg-white/20 transition-all duration-300"
+            className="flex-1 px-6 py-4 bg-white/5 border border-white/10 text-white font-medium rounded-xl hover:bg-white/10 transition-all duration-300 text-center"
           >
             View Dashboard
           </Link>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

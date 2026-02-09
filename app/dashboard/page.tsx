@@ -9,5 +9,11 @@ export default async function Dashboard() {
     redirect("/api/auth/signin?callbackUrl=/dashboard")
   }
 
-  return <DashboardView userName={session.user?.name || "User"} userImage={session.user?.image} />
+  return (
+    <DashboardView 
+      userName={session.user?.name || "User"} 
+      userImage={session.user?.image}
+      userEmail={session.user?.email}
+    />
+  )
 }

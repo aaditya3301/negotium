@@ -1,15 +1,19 @@
 from fastapi import APIRouter, HTTPException
-from langchain_core.messages import HumanMessage
 import uuid
-from models import (
+from .models import (
     CreateSessionRequest,
     SendMessageRequest,
     SessionResponse,
     MessageResponse,
     AnalysisResponse
 )
-from workflow import negotiation_app
-from database import get_sessions_collection, get_turns_collection, get_analyses_collection
+from .agents import (
+    scenario_designer_agent,
+    opponent_agent,
+    shadow_coach_agent,
+    analyst_agent
+)
+from .database import get_sessions_collection, get_turns_collection, get_analyses_collection
 from datetime import datetime
 
 router = APIRouter(prefix="/api", tags=["negotiation"])
@@ -19,31 +23,40 @@ active_sessions = {}
 
 @router.post("/sessions", response_model=SessionResponse)
 async def create_session(request: CreateSessionRequest):
-    """Create a new negotiation session."""
+    """Create a new negotiation session using simplified agents."""
+    
+    print(f"DEBUG: Received request - user_id: {request.user_id}, scenario: {request.scenario_type}, difficulty: {request.difficulty}")
     
     session_id = f"sess_{uuid.uuid4().hex[:12]}"
     
-    # Initialize state
-    initial_state = {
+    # Run scenario designer agent
+    scenario_config = scenario_designer_agent(
+        scenario_type=request.scenario_type,
+        difficulty=request.difficulty
+    )
+    
+    # Initialize session state
+    session_state = {
         "session_id": session_id,
         "user_id": request.user_id,
         "scenario_type": request.scenario_type,
         "difficulty": request.difficulty,
-        "messages": [],
+        "personality": scenario_config["personality"],
+        "constraints": scenario_config["constraints"],
+        "batna": scenario_config["batna"],
+        "mood": "curious",
+        "patience": scenario_config["patience"],
+        "leverage": 50,
         "turn_number": 0,
-        "conversation_stage": "opening",
-        "next_action": "opponent"
+        "history": [
+            {"role": "assistant", "content": scenario_config["opening_message"]}
+        ],
+        "leverage_trajectory": [50],
+        "mood_trajectory": ["curious"]
     }
     
-    # Run ONLY scenario designer to initialize (not full workflow)
-    from agents.scenario_designer import scenario_designer_node
-    result = scenario_designer_node(initial_state)
-    
-    # Merge result with initial state
-    initial_state.update(result)
-    
     # Store in memory
-    active_sessions[session_id] = initial_state
+    active_sessions[session_id] = session_state
     
     # Save to MongoDB
     sessions_col = get_sessions_collection()
@@ -54,90 +67,117 @@ async def create_session(request: CreateSessionRequest):
         "difficulty": request.difficulty,
         "status": "active",
         "created_at": datetime.utcnow(),
-        "opponent_personality": result.get("opponent_personality"),
-        "opponent_constraints": result.get("opponent_constraints")
+        "opponent_personality": scenario_config["personality"],
+        "opponent_constraints": scenario_config["constraints"]
     })
     
     return SessionResponse(
         session_id=session_id,
         status="active",
-        opponent_mood=result["opponent_mood"],
-        opponent_patience=result["opponent_patience"],
-        current_leverage=result["current_leverage"],
-        turn_number=result["turn_number"]
+        opponent_mood="curious",
+        opponent_patience=scenario_config["patience"],
+        current_leverage=50,
+        turn_number=0
     )
 
 @router.post("/sessions/{session_id}/message", response_model=MessageResponse)
 async def send_message(session_id: str, request: SendMessageRequest):
-    """Send a user message and get opponent response."""
+    """Send a user message and get opponent response + real-time coach tip."""
     
     if session_id not in active_sessions:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    current_state = active_sessions[session_id]
+    state = active_sessions[session_id]
     
-    # Add user message to state
-    current_state["messages"].append(HumanMessage(content=request.content))
+    # Add user message to history
+    state["history"].append({"role": "user", "content": request.content})
     
-    # Run opponent agent directly
-    from agents.opponent import opponent_agent_node
-    result = opponent_agent_node(current_state)
+    # Get opponent response
+    opponent_result = opponent_agent(
+        user_message=request.content,
+        history=state["history"],
+        scenario_type=state["scenario_type"],
+        personality=state["personality"],
+        mood=state["mood"],
+        patience=state["patience"],
+        constraints=state["constraints"],
+        batna=state["batna"],
+        current_leverage=state["leverage"]  # Pass current leverage
+    )
     
-    # Update state with result
-    current_state.update(result)
+    # Get real-time coach tip
+    coach_tip = shadow_coach_agent(
+        user_message=request.content,
+        context={
+            "leverage": opponent_result["new_leverage"],
+            "mood": opponent_result["new_mood"],
+            "patience": opponent_result["new_patience"]
+        }
+    )
     
-    # Update session
-    active_sessions[session_id] = current_state
+    # Update state
+    state["history"].append({"role": "assistant", "content": opponent_result["opponent_reply"]})
+    state["mood"] = opponent_result["new_mood"]
+    state["patience"] = opponent_result["new_patience"]
+    state["leverage"] = opponent_result["new_leverage"]
+    state["turn_number"] += 1
+    state["leverage_trajectory"].append(opponent_result["new_leverage"])
+    state["mood_trajectory"].append(opponent_result["new_mood"])
     
     # Save turn to MongoDB
     turns_col = get_turns_collection()
     turns_col.insert_one({
         "session_id": session_id,
-        "turn_number": result["turn_number"],
+        "turn_number": state["turn_number"],
         "user_message": request.content,
-        "opponent_response": result["messages"][-1].content,
-        "opponent_mood": result["opponent_mood"],
-        "opponent_patience": result["opponent_patience"],
-        "calculated_leverage": result["current_leverage"],
+        "opponent_response": opponent_result["opponent_reply"],
+        "coach_tip": coach_tip,
+        "opponent_mood": opponent_result["new_mood"],
+        "opponent_patience": opponent_result["new_patience"],
+        "calculated_leverage": opponent_result["new_leverage"],
         "timestamp": datetime.utcnow()
     })
     
     return MessageResponse(
-        opponent_response=result["messages"][-1].content,
-        opponent_mood=result["opponent_mood"],
-        opponent_patience=result["opponent_patience"],
-        current_leverage=result["current_leverage"],
-        turn_number=result["turn_number"],
-        conversation_stage=result.get("conversation_stage", "middle")
+        opponent_response=opponent_result["opponent_reply"],
+        coach_tip=coach_tip,  # NEW: Real-time coaching
+        opponent_mood=opponent_result["new_mood"],
+        opponent_patience=opponent_result["new_patience"],
+        current_leverage=opponent_result["new_leverage"],
+        turn_number=state["turn_number"],
+        conversation_stage="middle" if state["patience"] > 30 else "closing"
     )
 
 @router.post("/sessions/{session_id}/end", response_model=AnalysisResponse)
 async def end_session(session_id: str):
-    """End the session and get Shadow Coach analysis."""
+    """End the session and get comprehensive analysis."""
     
     if session_id not in active_sessions:
         raise HTTPException(status_code=404, detail="Session not found")
     
-    current_state = active_sessions[session_id]
-    current_state["conversation_stage"] = "ended"
-    current_state["next_action"] = "end"
+    state = active_sessions[session_id]
     
-    # Run shadow coach directly
-    from agents.shadow_coach import shadow_coach_node
-    result = shadow_coach_node(current_state)
-    
-    # Merge results
-    current_state.update(result)
-    
-    feedback = result["shadow_coach_feedback"]
+    # Run analyst agent
+    analysis = analyst_agent(
+        history=state["history"],
+        scenario_type=state["scenario_type"],
+        final_leverage=state["leverage"],
+        final_patience=state["patience"],
+        leverage_trajectory=state["leverage_trajectory"],
+        mood_trajectory=state["mood_trajectory"]
+    )
     
     # Save analysis to MongoDB
     analyses_col = get_analyses_collection()
     analyses_col.insert_one({
         "session_id": session_id,
-        "feedback": feedback,
-        "leverage_trajectory": current_state["leverage_trajectory"],
-        "mood_trajectory": current_state["mood_trajectory"],
+        "summary": analysis.get("summary", "Analysis completed."),
+        "outcome": analysis.get("outcome", "Unknown"),
+        "strengths": analysis.get("strengths", []),
+        "mistakes": analysis.get("mistakes", []),
+        "skill_gaps": analysis.get("skill_gaps", []),
+        "leverage_trajectory": state["leverage_trajectory"],
+        "mood_trajectory": state["mood_trajectory"],
         "generated_at": datetime.utcnow()
     })
     
@@ -152,15 +192,13 @@ async def end_session(session_id: str):
     del active_sessions[session_id]
     
     return AnalysisResponse(
-        overall_outcome=feedback["overall_outcome"],
-        executive_summary=feedback["executive_summary"],
-        strengths=feedback["strengths"],
-        mistakes=feedback["mistakes"],
-        pivotal_moments=feedback["pivotal_moments"],
-        patterns_identified=feedback["patterns_identified"],
-        focus_areas=feedback["focus_areas"],
-        leverage_trajectory=current_state["leverage_trajectory"],
-        mood_trajectory=current_state["mood_trajectory"]
+        summary=analysis.get("summary", "Analysis completed."),
+        outcome=analysis.get("outcome", "Unknown"),
+        strengths=analysis.get("strengths", []),
+        mistakes=analysis.get("mistakes", []),
+        skill_gaps=analysis.get("skill_gaps", []),
+        leverage_trajectory=state["leverage_trajectory"],
+        mood_trajectory=state["mood_trajectory"]
     )
 
 @router.get("/sessions/{session_id}")
@@ -194,16 +232,12 @@ async def get_analysis(session_id: str):
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
     
-    feedback = analysis["feedback"]
-    
     return AnalysisResponse(
-        overall_outcome=feedback["overall_outcome"],
-        executive_summary=feedback["executive_summary"],
-        strengths=feedback["strengths"],
-        mistakes=feedback["mistakes"],
-        pivotal_moments=feedback["pivotal_moments"],
-        patterns_identified=feedback["patterns_identified"],
-        focus_areas=feedback["focus_areas"],
-        leverage_trajectory=analysis["leverage_trajectory"],
-        mood_trajectory=analysis["mood_trajectory"]
+        summary=analysis.get("summary", "Analysis completed."),
+        outcome=analysis.get("outcome", "Unknown"),
+        strengths=analysis.get("strengths", []),
+        mistakes=analysis.get("mistakes", []),
+        skill_gaps=analysis.get("skill_gaps", []),
+        leverage_trajectory=analysis.get("leverage_trajectory", []),
+        mood_trajectory=analysis.get("mood_trajectory", [])
     )

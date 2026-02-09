@@ -6,6 +6,7 @@ import { Send, ArrowLeft, Loader2, MessageCircle, TrendingUp, Clock, Pause, Play
 import Link from "next/link"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
+import { useSession } from "next-auth/react"
 
 type Message = {
   role: "user" | "assistant"
@@ -24,6 +25,7 @@ const scenarioDurations: Record<string, number> = {
 function NegotiationContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { data: session } = useSession()
   const scenario = searchParams.get("scenario") || "salary_raise"
   const difficulty = searchParams.get("difficulty") || "beginner"
 
@@ -32,6 +34,7 @@ function NegotiationContent() {
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [initializing, setInitializing] = useState(true)
+  const [coachTip, setCoachTip] = useState<string>("")  // NEW: Real-time coach tips
   
   // Timer State
   const initialTime = (scenarioDurations[scenario] || 15) * 60 // seconds
@@ -45,6 +48,7 @@ function NegotiationContent() {
   const [opponentPatience, setOpponentPatience] = useState(80)
   const [leverage, setLeverage] = useState(50)
   const [turnNumber, setTurnNumber] = useState(0)
+  const sessionInitializedRef = useRef(false)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -56,13 +60,19 @@ function NegotiationContent() {
 
   // Initialize session
   useEffect(() => {
+    if (sessionInitializedRef.current) return // Prevent duplicate initialization
+    sessionInitializedRef.current = true
+    
     const initSession = async () => {
       try {
+        // Use session email as user_id, fallback to demo_user
+        const userId = session?.user?.email || 'demo_user'
+        
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sessions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            user_id: "demo_user",
+            user_id: userId,
             scenario_type: scenario,
             difficulty: difficulty
           })
@@ -86,7 +96,7 @@ function NegotiationContent() {
     }
 
     initSession()
-  }, [scenario, difficulty])
+  }, [scenario, difficulty, session])
 
   // Timer Logic
   useEffect(() => {
@@ -142,6 +152,7 @@ function NegotiationContent() {
       setOpponentPatience(data.opponent_patience)
       setLeverage(data.current_leverage)
       setTurnNumber(data.turn_number)
+      setCoachTip(data.coach_tip)  // NEW: Show real-time coach tip
     } catch (error) {
       console.error("Failed to send message:", error)
     } finally {
@@ -360,10 +371,30 @@ function NegotiationContent() {
              <div className="bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 rounded-2xl p-6 flex-1">
                 <div className="flex items-center gap-2 mb-4">
                    <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                   <h3 className="text-sm font-bold tracking-wide">LIVE ANALYSIS</h3>
+                   <h3 className="text-sm font-bold tracking-wide">SHADOW COACH</h3>
                 </div>
                 
                 <div className="space-y-4">
+                   {/* Real-time Coach Tip */}
+                   {coachTip && (
+                     <motion.div 
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       className="p-4 rounded-xl bg-gradient-to-br from-teal-500/10 to-purple-500/10 border border-teal-500/20"
+                     >
+                       <div className="flex items-start gap-3">
+                         <Zap className="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" />
+                         <div>
+                           <p className="text-xs font-bold text-teal-400 mb-1 uppercase tracking-wide">Tactical Tip</p>
+                           <p className="text-white/90 text-sm leading-relaxed">
+                             {coachTip}
+                           </p>
+                         </div>
+                       </div>
+                     </motion.div>
+                   )}
+                   
+                   {/* General Analysis */}
                    <div className="p-4 rounded-xl bg-white/5 border border-white/5">
                       <p className="text-white/80 text-sm leading-relaxed">
                         {messages.length < 2 ? (

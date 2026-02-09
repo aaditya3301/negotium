@@ -22,7 +22,7 @@ export default function ScenariosView({ userName, userImage }: ScenariosViewProp
       description: "Negotiate a merit-based raise during your performance review with a budget-conscious manager.",
       icon: DollarSign,
       duration: "15 min",
-      difficulty: "Medium",
+      difficulty: "intermediate",
       color: "teal",
       tags: ["Career", "Internal"]
     },
@@ -32,7 +32,7 @@ export default function ScenariosView({ userName, userImage }: ScenariosViewProp
       description: "Make your case for a promotion to the next level while addressing manager concerns.",
       icon: Briefcase,
       duration: "20 min",
-      difficulty: "Medium",
+      difficulty: "intermediate",
       color: "purple",
       tags: ["Career", "Growth"]
     },
@@ -42,7 +42,7 @@ export default function ScenariosView({ userName, userImage }: ScenariosViewProp
       description: "Justify and negotiate higher consulting rates with a long-term client considering cheaper alternatives.",
       icon: Users,
       duration: "18 min",
-      difficulty: "Hard",
+      difficulty: "advanced",
       color: "amber",
       tags: ["Sales", "External"]
     },
@@ -52,7 +52,7 @@ export default function ScenariosView({ userName, userImage }: ScenariosViewProp
       description: "Negotiate your starting salary for your first professional role without seeming greedy.",
       icon: DollarSign,
       duration: "12 min",
-      difficulty: "Beginner",
+      difficulty: "beginner",
       color: "cyan",
       tags: ["Career", "Entry"]
     },
@@ -62,7 +62,7 @@ export default function ScenariosView({ userName, userImage }: ScenariosViewProp
       description: "You received a compelling competing offer. Learn to leverage it ethically without burning bridges.",
       icon: MessageSquare,
       duration: "16 min",
-      difficulty: "Advanced",
+      difficulty: "advanced",
       color: "red",
       tags: ["Career", "Strategy"]
     },
@@ -72,7 +72,7 @@ export default function ScenariosView({ userName, userImage }: ScenariosViewProp
       description: "Negotiate flexible work arrangements with a manager who prefers in-office collaboration.",
       icon: Users,
       duration: "14 min",
-      difficulty: "Beginner",
+      difficulty: "beginner",
       color: "teal",
       tags: ["Lifestyle", "Policy"]
     },

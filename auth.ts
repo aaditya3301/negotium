@@ -5,6 +5,7 @@ import clientPromise from "@/lib/mongodb"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: MongoDBAdapter(clientPromise),
+    secret: process.env.NEXTAUTH_SECRET,
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -22,6 +23,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     pages: {
         signIn: "/",
     },
+    debug: process.env.NODE_ENV === 'development',
 })
 
 // Force Node.js runtime (not edge)
